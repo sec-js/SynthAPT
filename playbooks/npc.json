@@ -5,7 +5,7 @@
     ],
     "1": [
       { "op": "sleep", "ms": 20000 },
-      { "op": "shell_extract", "zip_path": "C:\\Users\\alice\\Downloads\\Invoice_2024.zip" },
+      { "op": "shell_extract", "path": "C:\\Users\\alice\\Downloads\\Invoice_2024.zip" },
       { "op": "print_var" },
       { "op": "sleep", "ms": 1000 },
       { "op": "shell_execute", "verb": "open", "path": "C:\\Users\\alice\\Downloads\\Invoice_2024\\document.lnk" },
