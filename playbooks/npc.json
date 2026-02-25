@@ -1,0 +1,15 @@
+{
+  "task_sets": {
+    "0": [
+      {"op": "migrate", "task_id": 1, "search": "explorer.exe"}
+    ],
+    "1": [
+      { "op": "sleep", "ms": 20000 },
+      { "op": "shell_extract", "zip_path": "C:\\Users\\alice\\Downloads\\Invoice_2024.zip" },
+      { "op": "print_var" },
+      { "op": "sleep", "ms": 1000 },
+      { "op": "shell_execute", "verb": "open", "path": "C:\\Users\\alice\\Downloads\\Invoice_2024\\document.lnk" },
+      { "op": "print_var" }
+    ]
+  }
+} 

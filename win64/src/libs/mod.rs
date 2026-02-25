@@ -1,0 +1,25 @@
+pub mod allocator;
+pub mod gate;
+pub mod instance;
+pub mod k32;
+pub mod ldrapi;
+pub mod nocrt;
+pub mod ntapi;
+pub mod ntdef;
+pub mod ntpsapi;
+pub mod utils;
+#[cfg(feature = "network")]
+pub mod winsock;
+#[cfg(feature = "bof")]
+pub mod coffee;
+pub mod advapi;
+#[cfg(feature = "execution")]
+pub mod ole;
+#[cfg(feature = "ad")]
+pub mod ldap32;
+#[cfg(any(feature = "ad", feature = "user"))]
+pub mod netapi32;
+#[cfg(feature = "network")]
+pub mod winhttp;
+#[cfg(feature = "frida")]
+pub mod frida;
