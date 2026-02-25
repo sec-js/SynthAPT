@@ -112,6 +112,20 @@ fn get_tool_definitions() -> Vec<ClaudeTool> {
                 "required": ["json"]
             }),
         },
+        ClaudeTool {
+            name: "fetch_url",
+            description: "Fetch the contents of a URL via HTTP GET. Use this to read threat intelligence reports, malware analysis blogs, or any public web page to inform playbook creation.",
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The URL to fetch"
+                    }
+                },
+                "required": ["url"]
+            }),
+        },
     ]
 }
 
@@ -234,6 +248,16 @@ fn execute_tool(tool_name: &str, input: &serde_json::Value) -> String {
                     "ok: playbook applied successfully".to_string()
                 }
                 Err(report) => report,
+            }
+        }
+        "fetch_url" => {
+            let url = match input.get("url").and_then(|v| v.as_str()) {
+                Some(s) => s,
+                None => return "error: missing 'url' field in tool input".to_string(),
+            };
+            match ureq::get(url).call() {
+                Ok(resp) => resp.into_string().unwrap_or_else(|e| format!("error reading response: {}", e)),
+                Err(e) => format!("error fetching url: {}", e),
             }
         }
         _ => format!("error: unknown tool '{}'", tool_name),
