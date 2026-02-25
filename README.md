@@ -29,24 +29,26 @@ The core implant is a shellcode payload driven by a playbook interpreter. A play
 - **TUI editor with LLM agent** - a terminal-based playbook editor with an integrated Claude agent that can generate and edit playbooks from natural language or threat intelligence
 - **BOF Loader** - functionality may be extended with standard Beacon Object Files
 
-## Compiling
+## Building from Source
 
-If you don't want to use the release, or you want to run it on something other than Linux, you can compile with cargo. You'll need the following:
+If you don't want to use the release you can compile it like so:
 
-1. Nightly Rust
-2. Binutils
-3. Cargo Make
+1. cargo
+2. rustup
+3. binutils-mingw-w64-x86-64
 
 ```bash
-rustup toolchain install nightly
-apt install binutils-mingw-w64-x86-64
 cargo install cargo-make
+rustup toolchain install nightly
+rustup target add x86_64-pc-windows-gnu --toolchain nightly                                                                                                                                                         
+sudo apt install gcc-mingw-w64-x86-64
 ```
 
 Build with cargo make:
 
 ```bash
-cargo make build-nix
+cargo make build
+./target/release/synthapt
 ```
 
 This will compile the shellcode and the editor.
