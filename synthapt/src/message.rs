@@ -231,6 +231,10 @@ pub enum Msg {
     WizardSubmit,
     /// Skip the wizard (save empty config and continue)
     WizardSkip,
+    /// Move selection up (list steps)
+    WizardUp,
+    /// Move selection down (list steps)
+    WizardDown,
 
     // ─────────────────────────────────────────────────────────
     // Agent background events

@@ -595,6 +595,8 @@ pub fn wizard_popup_context() -> ShortcutContext {
         .add(Shortcut::static_msg(KeyCombo::plain(KeyCode::Backspace), || Msg::WizardBackspace, "Delete character"))
         .add(Shortcut::static_msg(KeyCombo::plain(KeyCode::Enter), || Msg::WizardSubmit, "Save and continue"))
         .add(Shortcut::static_msg(KeyCombo::plain(KeyCode::Esc), || Msg::WizardSkip, "Skip"))
+        .add(Shortcut::static_msg(KeyCombo::plain(KeyCode::Up), || Msg::WizardUp, "Move up"))
+        .add(Shortcut::static_msg(KeyCombo::plain(KeyCode::Down), || Msg::WizardDown, "Move down"))
 }
 
 /// New-playbook filename popup

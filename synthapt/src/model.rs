@@ -352,6 +352,28 @@ impl Default for CanvasState {
 pub struct WizardPopupState {
     pub input: String,
     pub cursor: usize,
+    pub selected: usize,
+}
+
+/// Which step of the first-run wizard we're on
+#[derive(Debug, Clone, Default, PartialEq)]
+pub enum WizardStep {
+    #[default]
+    Provider,
+    OllamaHost,
+    OllamaPort,
+    OllamaModel,
+    ClaudeApiKey,
+}
+
+/// Collected values across wizard steps
+#[derive(Debug, Clone, Default)]
+pub struct WizardData {
+    pub provider: String,
+    pub ollama_host: String,
+    pub ollama_port: String,
+    pub ollama_model: String,
+    pub api_key: String,
 }
 
 /// The complete application state
@@ -395,6 +417,8 @@ pub struct Model {
     pub file_browser: Option<FileBrowserState>,
     /// First-run setup wizard popup state (None = closed / wizard complete)
     pub wizard_popup: Option<WizardPopupState>,
+    pub wizard_step: WizardStep,
+    pub wizard_data: WizardData,
     /// Task field editor state (Some when a Task node is selected)
     pub task_edit: Option<TaskEditState>,
 
@@ -508,6 +532,8 @@ impl Model {
             new_playbook_popup: None,
             file_browser: None,
             wizard_popup: None,
+            wizard_step: WizardStep::default(),
+            wizard_data: WizardData::default(),
             task_edit: None,
 
             selected_node: None,

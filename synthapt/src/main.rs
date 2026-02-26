@@ -269,7 +269,7 @@ fn render(model: &mut Model, frame: &mut Frame) {
 
     // Render first-run wizard popup (always on top)
     if let Some(ref state) = model.wizard_popup {
-        render_wizard_popup(frame, state);
+        render_wizard_popup(frame, state, &model.wizard_step);
     }
 }
 
@@ -472,7 +472,8 @@ fn render_new_playbook_popup(frame: &mut Frame, state: &crate::model::NewPlayboo
 }
 
 /// Render the first-run setup wizard popup
-fn render_wizard_popup(frame: &mut Frame, state: &crate::model::WizardPopupState) {
+fn render_wizard_popup(frame: &mut Frame, state: &crate::model::WizardPopupState, step: &crate::model::WizardStep) {
+    use crate::model::WizardStep;
     use ratatui::{
         layout::Alignment,
         style::Style,
@@ -488,22 +489,80 @@ fn render_wizard_popup(frame: &mut Frame, state: &crate::model::WizardPopupState
 
     frame.render_widget(Clear, popup_area);
 
+    // Provider step uses a list selection widget instead of text input
+    if *step == WizardStep::Provider {
+        use common::tui::popup::{ListItem, ListPopupWidget};
+        let items = vec![
+            ListItem { primary: "claude", secondary: "Anthropic Claude API" },
+            ListItem { primary: "ollama", secondary: "Local Ollama instance" },
+        ];
+        ListPopupWidget {
+            title: "SynthAPT — Choose AI Provider",
+            filter: "",
+            cursor: 0,
+            items: &items,
+            selected: state.selected,
+            scroll: 0,
+        }.render(frame);
+        return;
+    }
+
+    let (title, lines, mask_input) = match step {
+        WizardStep::Provider => unreachable!(),
+        WizardStep::OllamaHost => (
+            " SynthAPT — Ollama Setup (1/3) ",
+            vec![
+                "Enter Ollama host address.",
+                "Leave blank to use default: 127.0.0.1",
+                "",
+                "",
+                "Press Enter to confirm   |   Esc to skip",
+            ],
+            false,
+        ),
+        WizardStep::OllamaPort => (
+            " SynthAPT — Ollama Setup (2/3) ",
+            vec![
+                "Enter Ollama port.",
+                "Leave blank to use default: 11434",
+                "",
+                "",
+                "Press Enter to confirm   |   Esc to skip",
+            ],
+            false,
+        ),
+        WizardStep::OllamaModel => (
+            " SynthAPT — Ollama Setup (3/3) ",
+            vec![
+                "Enter Ollama model name.",
+                "Must support tool calling (e.g. qwen3, llama3.1)",
+                "Leave blank for default: qwen3",
+                "",
+                "Press Enter to confirm   |   Esc to skip",
+            ],
+            false,
+        ),
+        WizardStep::ClaudeApiKey => (
+            " SynthAPT — Claude Setup ",
+            vec![
+                "Enter your Claude API key to enable the AI assistant.",
+                "The key is saved to ~/.config/SynthAPT/config.toml.",
+                "You can also set ANTHROPIC_API_KEY in your environment.",
+                "",
+                "Press Enter to save   |   Esc to skip",
+            ],
+            true,
+        ),
+    };
+
     let block = Block::default()
-        .title(" SynthAPT — First Run Setup ")
+        .title(title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme::CYAN))
         .style(Style::default().bg(theme::BG));
 
     let inner = block.inner(popup_area);
     frame.render_widget(block, popup_area);
-
-    let lines = [
-        "Enter your Claude API key to enable the AI assistant.",
-        "The key is saved to ~/.config/SynthAPT/config.toml.",
-        "You can also set ANTHROPIC_API_KEY in your environment.",
-        "",
-        "Press Enter to save   |   Esc to skip",
-    ];
 
     for (i, line) in lines.iter().enumerate() {
         let hint = Paragraph::new(*line)
@@ -519,12 +578,15 @@ fn render_wizard_popup(frame: &mut Frame, state: &crate::model::WizardPopupState
     let cursor_pos = state.cursor.min(state.input.len());
     let before = &state.input[..cursor_pos];
     let after = &state.input[cursor_pos..];
-    // Mask the key so it doesn't appear on screen
-    let masked_before = "•".repeat(before.chars().count());
-    let masked_after = "•".repeat(after.chars().count());
-    let input_text = format!("{masked_before}|{masked_after}");
+    let input_text = if mask_input {
+        let masked_before = "•".repeat(before.chars().count());
+        let masked_after = "•".repeat(after.chars().count());
+        format!("{masked_before}|{masked_after}")
+    } else {
+        format!("{before}|{after}")
+    };
     let input = Paragraph::new(input_text)
-        .style(Style::default().fg(theme::FG))
+        .style(Style::default().fg(theme::CYAN))
         .alignment(Alignment::Left);
     let input_area = ratatui::layout::Rect {
         x: inner.x,

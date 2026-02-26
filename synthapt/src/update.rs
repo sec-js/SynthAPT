@@ -230,6 +230,8 @@ pub fn update(mut model: Model, msg: Msg) -> Model {
         Msg::WizardBackspace => update_wizard_backspace(model),
         Msg::WizardSubmit => update_wizard_submit(model),
         Msg::WizardSkip => update_wizard_skip(model),
+        Msg::WizardUp => update_wizard_up(model),
+        Msg::WizardDown => update_wizard_down(model),
 
         // Playbook mutation
         Msg::AddNode { set_id, op, index } => update_add_node(model, set_id, op, index),
@@ -478,6 +480,13 @@ fn handle_popup_mouse(
             }
             _ => (model, true),
         };
+    }
+
+    // ── wizard popup ─────────────────────────────────────────────────────────
+    if model.wizard_popup.is_some() {
+        // Wizard is a mandatory setup flow — consume all mouse events so
+        // pane clicks cannot steal keyboard focus away from the popup.
+        return (model, true);
     }
 
     (model, false)
@@ -2956,14 +2965,33 @@ fn update_wizard_backspace(mut model: Model) -> Model {
 }
 
 fn update_wizard_submit(mut model: Model) -> Model {
-    let api_key = match model.wizard_popup.take() {
-        Some(p) => p.input,
+    let popup = match model.wizard_popup.take() {
+        Some(p) => p,
         None => return model,
     };
-    crate::wizard::complete(model, api_key)
+    crate::wizard::advance(model, popup.input, popup.selected)
 }
 
-fn update_wizard_skip(mut model: Model) -> Model {
-    model.wizard_popup = None;
-    crate::wizard::complete(model, String::new())
+fn update_wizard_skip(model: Model) -> Model {
+    crate::wizard::skip(model)
+}
+
+const WIZARD_PROVIDER_COUNT: usize = 2;
+
+fn update_wizard_up(mut model: Model) -> Model {
+    if model.wizard_step == crate::model::WizardStep::Provider {
+        if let Some(ref mut popup) = model.wizard_popup {
+            popup.selected = popup.selected.saturating_sub(1);
+        }
+    }
+    model
+}
+
+fn update_wizard_down(mut model: Model) -> Model {
+    if model.wizard_step == crate::model::WizardStep::Provider {
+        if let Some(ref mut popup) = model.wizard_popup {
+            popup.selected = (popup.selected + 1).min(WIZARD_PROVIDER_COUNT - 1);
+        }
+    }
+    model
 }

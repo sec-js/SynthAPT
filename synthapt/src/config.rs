@@ -1,9 +1,32 @@
 use std::path::PathBuf;
 
+#[derive(Debug, Clone, Default, PartialEq)]
+pub enum Provider {
+    #[default]
+    Claude,
+    Ollama,
+}
+
 /// Application configuration stored at ~/.config/SynthAPT/config.toml
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Config {
     pub api_key: Option<String>,
+    pub provider: Provider,
+    pub ollama_host: String,
+    pub ollama_port: u16,
+    pub ollama_model: String,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            api_key: None,
+            provider: Provider::Claude,
+            ollama_host: "127.0.0.1".to_string(),
+            ollama_port: 11434,
+            ollama_model: "qwen3:14b".to_string(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -63,33 +86,66 @@ impl Config {
     }
 
     fn to_toml(&self) -> String {
-        let mut lines = vec!["[claude]".to_string()];
+        let mut lines = Vec::new();
+
+        lines.push("[provider]".to_string());
+        match self.provider {
+            Provider::Claude => lines.push("backend = \"claude\"".to_string()),
+            Provider::Ollama => lines.push("backend = \"ollama\"".to_string()),
+        }
+        lines.push(String::new());
+
+        lines.push("[claude]".to_string());
         match &self.api_key {
             Some(key) => lines.push(format!("api_key = \"{}\"", key)),
             None => lines.push("# api_key = \"sk-ant-...\"".to_string()),
         }
         lines.push(String::new());
+
+        lines.push("[ollama]".to_string());
+        lines.push(format!("host = \"{}\"", self.ollama_host));
+        lines.push(format!("port = {}", self.ollama_port));
+        lines.push(format!("model = \"{}\"", self.ollama_model));
+        lines.push(String::new());
+
         lines.join("\n")
     }
 
     fn parse_toml(content: &str) -> Self {
         let mut config = Self::default();
-        let mut in_claude = false;
+        let mut section = String::new();
+
         for line in content.lines() {
             let line = line.trim();
             if line.is_empty() || line.starts_with('#') { continue; }
             if line.starts_with('[') && line.ends_with(']') {
-                in_claude = &line[1..line.len() - 1] == "claude";
+                section = line[1..line.len() - 1].to_string();
                 continue;
             }
-            if in_claude {
-                if let Some((key, value)) = line.split_once('=') {
-                    if key.trim() == "api_key" {
-                        let v = value.trim().trim_matches('"');
-                        if !v.is_empty() {
-                            config.api_key = Some(v.to_string());
+            if let Some((key, value)) = line.split_once('=') {
+                let key = key.trim();
+                let value = value.trim().trim_matches('"');
+                match section.as_str() {
+                    "provider" => {
+                        if key == "backend" {
+                            config.provider = match value {
+                                "ollama" => Provider::Ollama,
+                                _ => Provider::Claude,
+                            };
                         }
                     }
+                    "claude" => {
+                        if key == "api_key" && !value.is_empty() {
+                            config.api_key = Some(value.to_string());
+                        }
+                    }
+                    "ollama" => match key {
+                        "host" => config.ollama_host = value.to_string(),
+                        "port" => config.ollama_port = value.parse().unwrap_or(11434),
+                        "model" => config.ollama_model = value.to_string(),
+                        _ => {}
+                    },
+                    _ => {}
                 }
             }
         }
