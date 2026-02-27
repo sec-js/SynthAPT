@@ -14,7 +14,7 @@ description = "Build win64 shellcode via cargo make"
 script_runner = "@shell"
 script = '''
 cd win64
-RUSTUP_TOOLCHAIN=nightly-2026-02-24 cargo make build
+RUSTUP_TOOLCHAIN=nightly-2024-11-30 cargo make build
 '''
 
 [tasks.build-synthapt]
