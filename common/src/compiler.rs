@@ -728,8 +728,8 @@ fn compile_task(task: &Value) -> Result<Vec<u8>, String> {
         }
 
         "wmi_exec" => {
-            // Args: [command:bytes][host:bytes][user:bytes][pass:bytes]
-            // host, user, pass are optional (empty = local/current creds)
+            // Args: [command:bytes][host:bytes][user:bytes][pass:bytes][domain:bytes]
+            // host, user, pass, domain are optional (empty = local/current creds)
             let default_str = Value::String(String::new());
             let command = require_str(task, "command")?;
             args.push(encode_arg(&parse_arg_value(command, false)?)?);
@@ -739,6 +739,8 @@ fn compile_task(task: &Value) -> Result<Vec<u8>, String> {
             args.push(encode_arg(&parse_arg_value(user, false)?)?);
             let pass = task.get("pass").unwrap_or(&default_str);
             args.push(encode_arg(&parse_arg_value(pass, false)?)?);
+            let domain = task.get("domain").unwrap_or(&default_str);
+            args.push(encode_arg(&parse_arg_value(domain, false)?)?);
         }
 
         "sacrificial" => {

@@ -293,6 +293,18 @@ pub type CoSetProxyBlanket = unsafe extern "system" fn(
     dwcapabilities: u32,
 ) -> i32;
 
+pub type CoInitializeSecurity = unsafe extern "system" fn(
+    psec_desc: *const c_void,
+    cauthn_svc: i32,
+    asauthn_svc: *const c_void,
+    preserved1: *const c_void,
+    dw_authn_level: u32,
+    dw_imp_level: u32,
+    preserved2: *const c_void,
+    dw_capabilities: u32,
+    preserved3: *const c_void,
+) -> i32;
+
 pub type SysAllocStringLen = unsafe extern "system" fn(
     strin: *const u16,
     ui: u32,
@@ -311,6 +323,7 @@ pub struct Ole32 {
     pub co_create_instance_ex: CoCreateInstanceEx,
     pub co_uninitialize: CoUninitialize,
     pub co_set_proxy_blanket: CoSetProxyBlanket,
+    pub co_initialize_security: CoInitializeSecurity,
     pub sys_alloc_string_len: SysAllocStringLen,
     pub sys_alloc_string: SysAllocString,
     pub sys_free_string: SysFreeString,
@@ -327,6 +340,7 @@ impl Ole32 {
             co_create_instance_ex: unsafe { core::mem::transmute(null_mut::<c_void>()) },
             co_uninitialize: unsafe { core::mem::transmute(null_mut::<c_void>()) },
             co_set_proxy_blanket: unsafe { core::mem::transmute(null_mut::<c_void>()) },
+            co_initialize_security: unsafe { core::mem::transmute(null_mut::<c_void>()) },
             sys_alloc_string_len: unsafe { core::mem::transmute(null_mut::<c_void>()) },
             sys_alloc_string: unsafe { core::mem::transmute(null_mut::<c_void>()) },
             sys_free_string: unsafe { core::mem::transmute(null_mut::<c_void>()) },
@@ -386,6 +400,13 @@ pub fn init_ole32_funcs() {
         )
         .unwrap();
         instance.ole.co_set_proxy_blanket = core::mem::transmute(nt_co_set_proxy_blanket_addr);
+
+        let nt_co_initialize_security_addr = (get_instance().unwrap().k32.get_proc_address)(
+            instance.ole.module_base as *mut c_void,
+            "CoInitializeSecurity\0".as_bytes().as_ptr(),
+        )
+        .unwrap();
+        instance.ole.co_initialize_security = core::mem::transmute(nt_co_initialize_security_addr);
 
         let nt_co_initialize_addr = (get_instance().unwrap().k32.get_proc_address)(
             instance.ole.module_base as *mut c_void,

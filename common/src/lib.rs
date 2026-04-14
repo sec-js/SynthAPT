@@ -543,6 +543,8 @@ pub enum Task {
         user: Option<ValueRef>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pass: Option<ValueRef>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        domain: Option<ValueRef>,
     },
 
     /// Execute via PsExec (deploys service on target)

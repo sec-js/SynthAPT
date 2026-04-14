@@ -342,7 +342,7 @@ pub unsafe fn wmi_create_process(command_line: &str) -> Result<u32, u32> {
         3,  // RPC_C_AUTHN_LEVEL_CALL
         3,  // RPC_C_IMP_LEVEL_IMPERSONATE
         null_mut(),
-        0,  // EOAC_NONE
+        0x20,  // EOAC_STATIC_CLOAKING — use thread impersonation token
     );
 
     if hr < 0 {
@@ -526,6 +526,7 @@ pub unsafe fn wmi_execute_command(
     host: Option<&str>,
     username: Option<&str>,
     password: Option<&str>,
+    domain: Option<&str>,
 ) -> Result<u32, u32> {
     // Initialize COM
     let hr = (get_instance().unwrap().ole.co_initialize)(null_mut());
@@ -533,95 +534,48 @@ pub unsafe fn wmi_execute_command(
         return Err(hr as u32);
     }
 
-    let mut locator: *mut c_void = null_mut();
-
-    // Create WbemLocator - use CoCreateInstanceEx for remote connections if host is provided
-    if let Some(hostname) = host {
-        let host_wide = to_wide_string(hostname);
-
-        let mut auth_identity: *mut COAUTHIDENTITY = null_mut();
-        let mut auth_info: *mut COAUTHINFO = null_mut();
-
-        let user_wide_opt = username.map(|u| to_wide_string(u));
-        let pass_wide_opt = password.map(|p| to_wide_string(p));
-
-        if let (Some(ref user_wide), Some(ref pass_wide)) = (&user_wide_opt, &pass_wide_opt) {
-            let identity = alloc::boxed::Box::new(COAUTHIDENTITY {
-                user: user_wide.as_ptr() as *mut u16,
-                user_length: (user_wide.len() - 1) as u32,
-                domain: null_mut(),
-                domain_length: 0,
-                password: pass_wide.as_ptr() as *mut u16,
-                password_length: (pass_wide.len() - 1) as u32,
-                flags: 2, // SEC_WINNT_AUTH_IDENTITY_UNICODE
-            });
-            auth_identity = alloc::boxed::Box::into_raw(identity);
-
-            let info = alloc::boxed::Box::new(COAUTHINFO {
-                dw_authn_svc: 10, // RPC_C_AUTHN_WINNT
-                dw_authz_svc: 0,  // RPC_C_AUTHZ_NONE
-                pwsz_server_princ_name: null_mut(),
-                dw_authn_level: 3, // RPC_C_AUTHN_LEVEL_CALL
-                dw_impersonation_level: 3, // RPC_C_IMP_LEVEL_IMPERSONATE
-                p_auth_identity_data: auth_identity,
-                dw_capabilities: 0,
-            });
-            auth_info = alloc::boxed::Box::into_raw(info);
-        }
-
-        let server = alloc::boxed::Box::new(COSERVERINFO {
-            dw_reserved1: 0,
-            pwsz_name: host_wide.as_ptr() as *mut u16,
-            p_auth_info: auth_info,
-            dw_reserved2: 0,
-        });
-        let server_info = alloc::boxed::Box::into_raw(server);
-
-        let mut qi = MULTI_QI {
-            p_iid: &IID_IWBEMLOCATOR,
-            p_itf: null_mut(),
-            hr: 0,
+    if username.is_none() && password.is_none() {
+        // Check if there's an impersonation token on the current thread
+        let h_thread = unsafe { (get_instance().unwrap().k32.get_current_thread)() };
+        let mut h_token = null_mut();
+        let has_impersonation_token = unsafe {
+            (get_instance().unwrap().advapi.open_thread_token)(h_thread, 0x08, false, &mut h_token)
         };
 
-        let hr = (get_instance().unwrap().ole.co_create_instance_ex)(
-            &CLSID_WBEMLOCATOR,
-            null_mut(),
-            1, // CLSCTX_INPROC_SERVER
-            server_info,
-            1,
-            &mut qi,
-        );
+        if has_impersonation_token && !h_token.is_null() {
+            unsafe { (get_instance().unwrap().k32.close_handle)(h_token) };
 
-        // Cleanup server info structures
-        let _ = alloc::boxed::Box::from_raw(server_info);
-        if !auth_info.is_null() {
-            let _ = alloc::boxed::Box::from_raw(auth_info);
+            let hr = (get_instance().unwrap().ole.co_initialize_security)(
+                null_mut(), // psec_desc - default security descriptor
+                -1,         // cauthn_svc - use default authentication services
+                null_mut(), // asauthn_svc - array of authentication services (unused with -1)
+                null_mut(), // preserved1
+                3,          // dw_authn_level - RPC_C_AUTHN_LEVEL_CALL
+                3,          // dw_imp_level - RPC_C_IMP_LEVEL_IMPERSONATE
+                null_mut(), // preserved2 - authentication info (unused with default services)
+                0x20,       // dw_capabilities - EOAC_STATIC_CLOAKING (use thread token)
+                null_mut(), // preserved3
+            );
+            if hr < 0 && hr != -2147417831 {
+                (get_instance().unwrap().ole.co_uninitialize)();
+                return Err(hr as u32);
+            }
         }
-        if !auth_identity.is_null() {
-            let _ = alloc::boxed::Box::from_raw(auth_identity);
-        }
+    }
 
-        if hr < 0 || qi.hr < 0 {
-            let error = if hr < 0 { hr } else { qi.hr };
-            (get_instance().unwrap().ole.co_uninitialize)();
-            return Err(error as u32);
-        }
+    let mut locator: *mut c_void = null_mut();
 
-        locator = qi.p_itf;
-    } else {
-        // Local connection
-        let hr = (get_instance().unwrap().ole.co_create_instance)(
-            &CLSID_WBEMLOCATOR,
-            null_mut(),
-            1, // CLSCTX_INPROC_SERVER
-            &IID_IWBEMLOCATOR,
-            &mut locator,
-        );
+    let hr = (get_instance().unwrap().ole.co_create_instance)(
+        &CLSID_WBEMLOCATOR,
+        null_mut(),
+        1, // CLSCTX_INPROC_SERVER
+        &IID_IWBEMLOCATOR,
+        &mut locator,
+    );
 
-        if hr < 0 {
-            (get_instance().unwrap().ole.co_uninitialize)();
-            return Err(hr as u32);
-        }
+    if hr < 0 {
+        (get_instance().unwrap().ole.co_uninitialize)();
+        return Err(hr as u32);
     }
 
     let locator = locator as *mut IWbemLocator;
@@ -638,9 +592,25 @@ pub unsafe fn wmi_execute_command(
     let namespace_wide = to_wide_string(&namespace);
 
     let mut services: *mut c_void = null_mut();
-    let user_wide = username.map(|u| to_wide_string(u));
-    let pass_wide = password.map(|p| to_wide_string(p));
-    let user_wide_ptr = user_wide.as_ref().map_or(null_mut(), |w| w.as_ptr() as *mut u16);
+
+    // Format username as domain\user if domain is provided
+    let (domain_user_wide, pass_wide) = if let (Some(user), Some(pass)) = (username, password) {
+        let domain_user = if let Some(dom) = domain {
+            let mut result = String::from(dom);
+            result.push('\\');
+            result.push_str(user);
+            result
+        } else {
+            String::from(user)
+        };
+        (Some(to_wide_string(&domain_user)), Some(to_wide_string(pass)))
+    } else if let Some(user) = username {
+        (Some(to_wide_string(user)), None)
+    } else {
+        (None, None)
+    };
+
+    let user_wide_ptr = domain_user_wide.as_ref().map_or(null_mut(), |w| w.as_ptr() as *mut u16);
     let pass_wide_ptr = pass_wide.as_ref().map_or(null_mut(), |w| w.as_ptr() as *mut u16);
 
     let hr = ((*locator).vtable.as_ref().unwrap().connect_server)(
@@ -663,7 +633,41 @@ pub unsafe fn wmi_execute_command(
 
     let services = services as *mut IWbemServices;
 
-    // Set proxy blanket for security
+    let user_wide_opt = username.map(|u| to_wide_string(u));
+    let pass_wide_opt = password.map(|p| to_wide_string(p));
+    let domain_wide_opt = domain.map(|d| to_wide_string(d));
+
+    // Set proxy blanket - create auth identity if explicit credentials provided
+    let auth_identity_ptr = if username.is_some() && password.is_some() {
+        if let (Some(ref user_wide), Some(ref pass_wide)) = (&user_wide_opt, &pass_wide_opt) {
+            let (domain_ptr, domain_len) = if let Some(ref domain_wide) = domain_wide_opt {
+                (domain_wide.as_ptr() as *mut u16, (domain_wide.len() - 1) as u32)
+            } else {
+                (null_mut(), 0)
+            };
+            let identity = alloc::boxed::Box::new(COAUTHIDENTITY {
+                user: user_wide.as_ptr() as *mut u16,
+                user_length: (user_wide.len() - 1) as u32,
+                domain: domain_ptr,
+                domain_length: domain_len,
+                password: pass_wide.as_ptr() as *mut u16,
+                password_length: (pass_wide.len() - 1) as u32,
+                flags: 2, // SEC_WINNT_AUTH_IDENTITY_UNICODE
+            });
+            alloc::boxed::Box::into_raw(identity) as *const c_void
+        } else {
+            null_mut() as *const c_void
+        }
+    } else {
+        null_mut() as *const c_void
+    };
+
+    let capabilities = if username.is_none() && password.is_none() {
+        0x20 // EOAC_STATIC_CLOAKING for thread token
+    } else {
+        0 // EOAC_NONE for explicit credentials 
+    };
+
     let hr = (get_instance().unwrap().ole.co_set_proxy_blanket)(
         services as *mut c_void,
         10, // RPC_C_AUTHN_WINNT
@@ -671,23 +675,32 @@ pub unsafe fn wmi_execute_command(
         null_mut(),
         3,  // RPC_C_AUTHN_LEVEL_CALL
         3,  // RPC_C_IMP_LEVEL_IMPERSONATE
-        null_mut(),
-        0,  // EOAC_NONE
+        auth_identity_ptr,
+        capabilities,
     );
 
     if hr < 0 {
+        // Clean up auth identity if we created one and there was an error
+        if !auth_identity_ptr.is_null() {
+            let _ = alloc::boxed::Box::from_raw(auth_identity_ptr as *mut COAUTHIDENTITY);
+        }
         ((*services).vtable.as_ref().unwrap().release)(services as *mut c_void);
         ((*locator).vtable.as_ref().unwrap().release)(locator as *mut c_void);
         (get_instance().unwrap().ole.co_uninitialize)();
         return Err(hr as u32);
     }
 
-    // Execute the WMI command using the same logic as wmi_create_process
     let result = execute_wmi_create_process_internal(services, command_line);
 
     // Cleanup
     ((*services).vtable.as_ref().unwrap().release)(services as *mut c_void);
     ((*locator).vtable.as_ref().unwrap().release)(locator as *mut c_void);
+
+    // Clean up auth identity if we created one
+    if !auth_identity_ptr.is_null() {
+        let _ = alloc::boxed::Box::from_raw(auth_identity_ptr as *mut COAUTHIDENTITY);
+    }
+
     (get_instance().unwrap().ole.co_uninitialize)();
 
     result

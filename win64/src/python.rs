@@ -1060,8 +1060,9 @@ pub unsafe extern "C" fn py_wmi_exec(_self: *mut c_void, args: *mut c_void) -> *
     let host = py_get_str_arg(py, args, 1);
     let user = py_get_str_arg(py, args, 2);
     let pass = py_get_str_arg(py, args, 3);
+    let domain = py_get_str_arg(py, args, 4);
 
-    match wmi_execute_command(&command, host.as_deref(), user.as_deref(), pass.as_deref()) {
+    match wmi_execute_command(&command, host.as_deref(), user.as_deref(), pass.as_deref(), domain.as_deref()) {
         Ok(pid) => {
             let long_from = match py.long_from_long { Some(f) => f, None => return py.py_none };
             long_from(pid as i64)

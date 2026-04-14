@@ -92,6 +92,7 @@ static ALL_METADATA: &[TaskMeta] = &[
         field!("host",    "string", opt),
         field!("user",    "string", opt),
         field!("pass",    "string", opt),
+        field!("domain",  "string", opt),
     ]),
     task!("psexec", "Deploy and run a service via PsExec", [
         field!("target",       "string", req),

@@ -613,7 +613,7 @@ pub enum Task {
     ListProcs,                              // 0x0E
     GetConst { const_idx: u16 },            // 0x0F
     #[cfg(feature = "execution")]
-    WmiExec { command: Arg, host: Arg, user: Arg, pass: Arg }, // 0x10
+    WmiExec { command: Arg, host: Arg, user: Arg, pass: Arg, domain: Arg }, // 0x10
     #[cfg(feature = "network")]
     HttpSend { method: Arg, host: Arg, port: Arg, path: Arg, secure: Arg, body: Arg }, // 0x11
     #[cfg(feature = "execution")]
@@ -1035,13 +1035,14 @@ pub fn parse_task(reader: &mut BytecodeReader) -> Task {
 
         #[cfg(feature = "execution")]
         Opcode::WmiExec => {
-            // Args: [command:bytes][host:bytes][user:bytes][pass:bytes]
+            // Args: [command:bytes][host:bytes][user:bytes][pass:bytes][domain:bytes]
             let mut args = reader.read_args().into_iter();
             let command = args.next().unwrap_or_default();
             let host = args.next().unwrap_or_default();
             let user = args.next().unwrap_or_default();
             let pass = args.next().unwrap_or_default();
-            Task::WmiExec { command, host, user, pass }
+            let domain = args.next().unwrap_or_default();
+            Task::WmiExec { command, host, user, pass, domain }
         }
 
         #[cfg(feature = "network")]
